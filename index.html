@@ -12,7 +12,7 @@
 <script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import {getAuth,signInAnonymously,onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
-import {getDatabase,ref,push,onValue,set,remove,serverTimestamp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js';
+import {getDatabase,ref,push,onValue,get,set,remove,serverTimestamp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js';
 const firebaseConfig={apiKey:'AIzaSyB7Cvm39FGgYS-DH26iFGgNtXUQYFizvv0',authDomain:'guardias-despacho.firebaseapp.com',databaseURL:'https://guardias-despacho-default-rtdb.firebaseio.com',projectId:'guardias-despacho',storageBucket:'guardias-despacho.firebasestorage.app',messagingSenderId:'916921808264',appId:'1:916921808264:web:d93d4f345eaf31f03f763d'};
 const TEMP_ALLOW_ANYTIME=true; // RESTAURAR false cuando terminemos las pruebas; también endurecer las reglas en Firebase.
 const raw = [
@@ -126,7 +126,41 @@ $('roster').addEventListener('click',async e=>{const btn=e.target.closest('[data
 $('findName').addEventListener('input',()=>{chosen=null;renderSuggestions();renderTasks()});$('suggestions').addEventListener('click',e=>{const b=e.target.closest('[data-person]');if(!b)return;chosen=allPeople().find(p=>p.id===b.dataset.person);$('findName').value=chosen?.name||'';$('suggestions').innerHTML='';renderSuggestions();renderTasks()});$('dayOptions').addEventListener('change',renderTasks);
 $('newCompany').innerHTML='<option value="">Seleccionar empresa…</option>'+companies.map(c=>`<option value="${c.id}">${esc(c.name)} · ${esc(c.category)}</option>`).join('');
 $('registerForm').addEventListener('submit',async e=>{e.preventDefault();if(!connected)return;const name=$('newName').value.trim().replace(/\s+/g,' '),company=$('newCompany').value;const feedback=$('registerStatus');if(name.length<3||name.length>80||!companies.some(c=>c.id===company))return;if(allPeople().some(p=>p.company===company&&p.name.toLocaleLowerCase('es')===name.toLocaleLowerCase('es'))){feedback.textContent='Esa persona ya está registrada en la empresa.';return}const btn=$('registerButton');btn.disabled=true;try{const key=push(ref(db,'personas')).key;await set(ref(db,'personas/'+key),{name,company,createdAt:serverTimestamp(),createdBy:auth.currentUser.uid});feedback.textContent='✅ ¡Listo! Ya podés buscar tu nombre y anotarte.';$('registerForm').reset();$('findName').value=name;chosen=null;renderSuggestions()}catch(err){feedback.textContent='No se pudo registrar: '+err.code+'. Revisá que estén publicadas las reglas nuevas de Realtime Database.'}finally{btn.disabled=!connected}});
-$('enroll').addEventListener('click',async()=>{if(!connected||!chosen||!period)return;const days=[...$('dayOptions').querySelectorAll('input:checked')].map(x=>x.value).filter(d=>periodDays().includes(d));if(!days.length){alert('Elegí al menos un día.');return}let entries=[];for(const day of days){const tasks=special()?[...$('taskOptions').querySelectorAll('input:checked')].filter(x=>x.dataset.day===day).map(x=>x.value):['General'];if(!tasks.length){alert('Elegí al menos una tarea para '+dayLabel(day));return}for(const task of tasks)entries.push({day,task})}if(!confirm(`¿Confirmás ${chosen.name} (${companies[+chosen.company].name}) para ${days.length} día(s) y ${entries.length} asignación(es)?`))return;const button=$('enroll');button.disabled=true;let ok=0,failed=0;for(const entry of entries){const key=[chosen.id,entry.day,entry.task].join('_').replace(/[^A-Za-z0-9_-]/g,'-');try{await set(ref(db,'guardias/'+period.id+'/'+key),{personId:chosen.id,name:chosen.name,company:chosen.company,day:entry.day,task:entry.task,createdAt:serverTimestamp(),createdBy:auth.currentUser.uid});ok++}catch(err){failed++;console.error(err)}}$('enrollHelp').textContent=failed?`Se guardaron ${ok}; ${failed} ya existían o fueron rechazadas por las reglas.`:`✅ Inscripción compartida guardada (${ok} asignaciones).`;button.disabled=false});
+$('enroll').addEventListener('click',async()=>{
+  if(!connected||!chosen||!period)return;
+  const days=[...$('dayOptions').querySelectorAll('input:checked')].map(x=>x.value).filter(d=>periodDays().includes(d));
+  if(!days.length){alert('Elegí al menos un día.');return}
+  const entries=[];
+  for(const day of days){
+    const tasks=special()?[...$('taskOptions').querySelectorAll('input:checked')].filter(x=>x.dataset.day===day).map(x=>x.value):['General'];
+    if(!tasks.length){alert('Elegí al menos una tarea para '+dayLabel(day));return}
+    for(const task of tasks)entries.push({day,task});
+  }
+  if(!confirm(`¿Confirmás ${chosen.name} (${companies[+chosen.company].name}) para ${days.length} día(s) y ${entries.length} asignación(es)?`))return;
+  const button=$('enroll');button.disabled=true;
+  let saved=0,already=0,rejected=0;
+  for(const entry of entries){
+    const key=[chosen.id,entry.day,entry.task].join('_').replace(/[^A-Za-z0-9_-]/g,'-');
+    const target=ref(db,'guardias/'+period.id+'/'+key);
+    try{
+      // Evitamos intentar sobrescribir guardias anteriores: las reglas solo permiten altas nuevas.
+      const snapshot=await get(target);
+      if(snapshot.exists()){already++;continue}
+      await set(target,{personId:chosen.id,name:chosen.name,company:chosen.company,day:entry.day,task:entry.task,createdAt:serverTimestamp(),createdBy:auth.currentUser.uid});
+      saved++;
+    }catch(err){
+      // Si otro dispositivo anotó esta misma guardia mientras tanto, clasificamos como duplicado.
+      try{if((await get(target)).exists()){already++;continue}}catch(_){}
+      rejected++;console.error('Error al guardar guardia:',entry,err);
+    }
+  }
+  const parts=[];
+  if(saved)parts.push(`✅ ${saved} guardia(s) guardada(s)`);
+  if(already)parts.push(`${already} ya estaba(n) anotada(s)`);
+  if(rejected)parts.push(`⚠ ${rejected} rechazada(s) por Firebase; si eran nuevas, avisame para revisar las reglas`);
+  $('enrollHelp').textContent=parts.join(' · ')||'No hubo cambios.';
+  button.disabled=false;
+});
 $('categories').addEventListener('click',e=>{const b=e.target.closest('[data-cat]');if(b){active=b.dataset.cat;renderRoster()}});$('companySearch').addEventListener('input',renderRoster);
 $('copy').addEventListener('click',async()=>{if(!period)return;const text='GUARDIAS DESPACHO · '+fmt(period.start)+' al '+fmt(addDays(period.end,1))+'\n\n'+companies.map(c=>{const items=guardias.filter(a=>a.company===c.id);return items.length?c.name+':\n'+[...new Set(items.map(a=>a.day))].sort().map(d=>dayLabel(d)+'\n'+items.filter(a=>a.day===d).map(a=>'- '+a.name+(a.task==='General'?'':' · '+a.task)).join('\n')).join('\n'):''}).filter(Boolean).join('\n\n');try{await navigator.clipboard.writeText(text);$('copy').textContent='¡Copiado!';setTimeout(()=>$('copy').textContent='Copiar para WhatsApp',1800)}catch{alert('No se pudo copiar.')}});
 async function fetchHolidays(){let entries=[],ok=[];const year=+nowAR().ymd.slice(0,4);for(const y of [year,year+1])try{const r=await fetch('https://api.argentinadatos.com/v1/feriados/'+y,{cache:'no-store'});if(!r.ok)throw Error('HTTP');const data=await r.json();if(!Array.isArray(data))throw Error('formato');for(const h of data){const type=String(h.tipo||'').toLowerCase();if(type.includes('no laborable')||type.includes('optativo'))continue;const d=String(h.fecha||'').slice(0,10);if(/^\d{4}-\d{2}-\d{2}$/.test(d))entries.push([d,h.nombre||'Feriado'])}ok.push(y)}catch(e){console.warn('Feriados '+y,e)}holidays=Object.fromEntries(entries);holidayState=ok.length?'ok':'error';$('holidayStatus').textContent=ok.length?'Feriados consultados para '+ok.join(' y ')+'. Verificá los cambios excepcionales en el calendario oficial.':'⚠ No se pudo consultar el calendario de feriados: revisar antes de inscribirse.';updatePeriod()}
