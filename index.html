@@ -3,11 +3,11 @@
 
 .task-day{border:1px solid #dce7f0;border-radius:12px;padding:12px;margin:10px 0;background:#f8fbff}.task-label{display:flex;align-items:center;gap:8px;margin:7px 0;font-size:13px}.task-label input{width:auto}.ok{color:#146b45}.error{color:#b12d39}.warning{background:#fff5e2;border:1px solid #f0d296;padding:12px;border-radius:10px;font-size:13px;margin-bottom:15px}.tag{display:inline-block;font-size:11px;color:#496d81;background:#edf3fa;border-radius:5px;padding:3px 7px;margin:3px}input:focus,select:focus{outline:2px solid #79b6e7}button:focus-visible{outline:3px solid #dcb14b}</style></head><body>
 <header><div><h1>◷ Guardias Despacho</h1><p>Inscripción y consulta · Sector Gas</p><p class="motto">🔥 El gas no descansa. Lamentablemente, nosotros tampoco.</p><p class="motto-sub">☕ Servicio esencial, descanso opcional.</p></div><span class="status" id="syncStatus">Conectando…</span></header>
-<main><div class="warning"><strong>🧰 Apertura temporal para probar</strong><div>Podés anotarte cualquier día mientras probamos. Los registros de esta versión se compartirán mediante Firebase. Cuando terminemos, volveremos al horario automático. <b>Sin contraseñas no podemos verificar la identidad</b>: no uses esta versión para información sensible o decisiones críticas de despacho.</div></div>
+<main><div class="warning"><strong>🧰 Apertura temporal para probar</strong><div>Podés anotarte cualquier día mientras probamos. Los registros de esta versión se compartirán mediante Firebase. Cuando terminemos, volveremos al horario automático. <b>Sin contraseñas cualquiera puede reemplazar o quitar una guardia</b>: no uses esta versión para información sensible o decisiones críticas de despacho.</div></div>
 <section class="hero"><div class="row"><div><h2 id="periodTitle">Buscando período…</h2><div class="muted" id="periodDesc"></div></div><span class="status" id="windowStatus">Verificando</span></div><p class="muted" id="holidayStatus">Consultando feriados argentinos…</p></section>
 <div class="grid"><section class="panel"><h2>1. Anotate de guardia</h2><p class="muted">Buscá tu nombre. Si todavía no estás, registrate en el panel de al lado: no hay aprobaciones.</p><div class="field"><label for="findName">Tu nombre</label><input id="findName" placeholder="Ej.: Caterina, Lucas…" autocomplete="off"></div><div id="suggestions"></div><div id="selected" class="found hidden"></div><div class="field"><label>Días que vas a cubrir</label><div id="dayOptions" class="day-options"></div></div><div id="taskOptions"></div><button class="primary" id="enroll" disabled>Confirmar guardia</button><div class="muted" id="enrollHelp" style="margin-top:9px">Elegí un nombre y al menos un día.</div></section>
-<section class="panel"><h2>2. ¿Sos nuevo? Sumate</h2><p class="muted">Agregá tu nombre y tu empresa. Aparecerás inmediatamente en el buscador de todos los dispositivos.</p><form id="registerForm"><div class="field"><label for="newName">Nombre y apellido</label><input id="newName" maxlength="80" required placeholder="Nombre completo"></div><div class="field"><label for="newCompany">Empresa</label><select id="newCompany" required></select></div><button class="primary" id="registerButton" disabled type="submit">Agregar persona</button></form><p id="registerStatus" class="muted"></p><p class="muted">No solicitamos correo ni PIN. Si te equivocás en una guardia, podés quitar cada día o tarea desde este mismo navegador. Para corregir el alta de una persona, todavía hace falta una herramienta de administración.</p></section></div>
-<section class="panel"><div class="row"><h2>Guardias del período</h2><button id="copy" class="secondary">Copiar para WhatsApp</button></div><p class="muted">Solo aparecen personas que se anotaron para este período. Los registros nuevos se reflejan automáticamente en los dispositivos conectados.</p><div class="tabs" id="categories"></div><div class="field"><input id="companySearch" type="search" placeholder="Buscar empresa o persona…"></div><div class="muted" id="guardCount"></div><div id="roster" class="list"></div></section>
+<section class="panel"><h2>2. ¿Sos nuevo? Sumate</h2><p class="muted">Agregá tu nombre y tu empresa. Aparecerás inmediatamente en el buscador de todos los dispositivos.</p><form id="registerForm"><div class="field"><label for="newName">Nombre y apellido</label><input id="newName" maxlength="80" required placeholder="Nombre completo"></div><div class="field"><label for="newCompany">Empresa</label><select id="newCompany" required></select></div><button class="primary" id="registerButton" disabled type="submit">Agregar persona</button></form><p id="registerStatus" class="muted"></p><p class="muted">No solicitamos correo ni PIN. Si te equivocás en una guardia, podés quitar o reemplazar cada día o tarea desde cualquier dispositivo. Para corregir el alta de una persona, todavía hace falta una herramienta de administración.</p></section></div>
+<section class="panel"><div class="row"><h2>Guardias del período</h2><button id="copy" class="secondary">Copiar para WhatsApp</button></div><p class="muted">Solo aparecen personas que se anotaron para este período. Los registros y reemplazos se reflejan en los dispositivos conectados. Las correcciones son libres entre compañeros.</p><div class="tabs" id="categories"></div><div class="field"><input id="companySearch" type="search" placeholder="Buscar empresa o persona…"></div><div class="muted" id="guardCount"></div><div id="roster" class="list"></div></section>
 <footer class="footer">Guardias Despacho · Hora de Argentina · Feriados: <a href="https://www.argentina.gob.ar/feriados" rel="noopener" target="_blank">calendario oficial</a> (verificar cambios extraordinarios).</footer></main>
 <script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
@@ -89,7 +89,7 @@ const raw = [
 const companies=raw.map((r,i)=>({id:String(i),category:r[0],name:r[1]}));
 const seedPeople=[];raw.forEach((r,i)=>r.slice(2).forEach(s=>{const z=s.split('|'),person=z.slice(1).join('|').trim();if(!/\d{5}/.test(person))person.split(/\s+&\s+/).forEach(name=>{if(!seedPeople.some(p=>p.name===name.trim()&&p.company===String(i)))seedPeople.push({id:'seed'+seedPeople.length,name:name.trim(),company:String(i)})})}));
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let addedPeople=[],guardias=[],holidays={},holidayState='pending',chosen=null,active='TODAS',period=null,connected=false,db,auth,offGuards=null;
+let addedPeople=[],guardias=[],allGuardias=[],holidays={},holidayState='pending',chosen=null,active='TODAS',period=null,connected=false,db,auth,offGuards=null;
 const zone='America/Argentina/Buenos_Aires';
 function nowAR(){const f=new Intl.DateTimeFormat('en-CA',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date());const o=Object.fromEntries(f.map(x=>[x.type,x.value]));return {ymd:`${o.year}-${o.month}-${o.day}`,hour:+o.hour,minute:+o.minute}}
 function addDays(ymd,n){const d=new Date(ymd+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)}
@@ -107,7 +107,13 @@ function renderTasks(){const keep={};$('taskOptions').querySelectorAll('input:ch
 function updateButton(){$('enroll').disabled=!connected||!chosen||!period||(!TEMP_ALLOW_ANYTIME&&(compareNow(period.open)<0||compareNow(period.close)>=0||holidayState==='pending'||holidayState==='error'))}
 function renderSuggestions(){const q=$('findName').value.trim().toLocaleLowerCase('es');const hits=q.length>=2?allPeople().filter(p=>p.name.toLocaleLowerCase('es').includes(q)).slice(0,16):[];$('suggestions').innerHTML=hits.map(p=>`<button class="person-choice" data-person="${esc(p.id)}">${esc(p.name)} · ${esc(companies[+p.company]?.name||'')}</button>`).join('');$('selected').classList.toggle('hidden',!chosen);if(chosen)$('selected').textContent=chosen.name+' · '+companies[+chosen.company].name;updateButton()}
 function updatePeriod(){const oldId=period?.id;const all=periods();period=all.find(p=>compareNow(p.open)>=0&&compareNow(p.close)<0)||all.find(p=>compareNow(p.open)<0)||all.at(-1);if(!period)return;$('periodTitle').textContent='Cobertura: '+fmt(period.start)+' al '+fmt(addDays(period.end,1))+' · 08:00';$('periodDesc').textContent='Inscripción prevista: '+fmt(addDays(period.start,-1))+' 08:00 → '+fmt(addDays(period.end,1))+' 08:00';$('windowStatus').textContent=TEMP_ALLOW_ANYTIME?'Abierta temporalmente':compareNow(period.open)>=0&&compareNow(period.close)<0?'Abierta':'Cerrada';if(oldId!==period.id){renderDays();listenGuardias()}updateButton();renderRoster()}
-function listenGuardias(){if(!db||!connected||!period)return;if(offGuards){offGuards();offGuards=null}offGuards=onValue(ref(db,'guardias/'+period.id),snap=>{guardias=Object.entries(snap.val()||{}).map(([id,item])=>({id,...item}));renderRoster()},e=>{$('syncStatus').textContent='Error lectura: '+e.code;connected=false;updateButton()})}
+// Cada empresa posee una casilla por día; TGS/TGN una por día y tarea.
+function groupCompany(company){return ['63','64'].includes(String(company))?'63':['65','66'].includes(String(company))?'65':String(company)}
+function slot(g){return groupCompany(g.company)+'|'+g.day+'|'+( ['63','65'].includes(groupCompany(g.company)) ? g.task : 'General')}
+function keyFor(g){const slug={'General':'G','Cierre':'C','Reprogramación':'R','Programación':'P','Balance':'B'}[g.task]||'G';return 'slot_'+groupCompany(g.company)+'_'+g.day.replace(/-/g,'')+'_'+slug}
+function currentGuardias(rows){const result=new Map();for(const g of rows){const k=slot(g),prev=result.get(k);if(!prev||Number(g.createdAt||0)>Number(prev.createdAt||0)||(Number(g.createdAt||0)===Number(prev.createdAt||0)&&g.id===keyFor(g)))result.set(k,g)}return [...result.values()]}
+function sameSlot(a,b){return slot(a)===slot(b)}
+function listenGuardias(){if(!db||!connected||!period)return;if(offGuards){offGuards();offGuards=null}offGuards=onValue(ref(db,'guardias/'+period.id),snap=>{allGuardias=Object.entries(snap.val()||{}).map(([id,item])=>({id,...item}));guardias=currentGuardias(allGuardias);renderRoster()},e=>{$('syncStatus').textContent='Error lectura: '+e.code;connected=false;updateButton()})}
 const cats=['TODAS','PRODUCTORES','ENTES NACIONALES','DISTCOS','COMERS','PLANTAS','TRANSCOS'];
 function renderRoster(){
   if(!period)return;
@@ -118,11 +124,18 @@ function renderRoster(){
   $('roster').innerHTML=filtered.map(c=>{
     const assignments=guardias.filter(a=>a.company===c.id).sort((a,b)=>a.day.localeCompare(b.day)||a.name.localeCompare(b.name));
     const dates=[...new Set(assignments.map(a=>a.day))].sort();
-    const grouped=dates.map(day=>`<div class="day-heading">${esc(dayLabel(day))}</div>${assignments.filter(a=>a.day===day).map(a=>`<div class="day-person">${esc(a.name)}${a.task!=='General'?` <span class="tag">${esc(a.task)}</span>`:''}${a.createdBy===auth?.currentUser?.uid?`<div class="own-actions"><button type="button" class="danger" data-remove-guard="${esc(a.id)}" title="Quitar solo esta asignación">Quitar esta guardia</button></div>`:''}</div>`).join('')}`).join('');
+    const grouped=dates.map(day=>`<div class="day-heading">${esc(dayLabel(day))}</div>${assignments.filter(a=>a.day===day).map(a=>`<div class="day-person">${esc(a.name)}${a.task!=='General'?` <span class="tag">${esc(a.task)}</span>`:''}${`<div class="own-actions"><button type="button" class="danger" data-remove-guard="${esc(a.id)}" title="Quitar esta asignación">Quitar esta guardia</button></div>`}</div>`).join('')}`).join('');
     return `<div class="company"><strong>${esc(c.name)}</strong><small>${esc(c.category)}</small>${grouped||'<div class="item muted">Sin inscriptos</div>'}</div>`;
   }).join('')||'<div class="muted">No se encontraron empresas.</div>';
 }
-$('roster').addEventListener('click',async e=>{const btn=e.target.closest('[data-remove-guard]');if(!btn||!connected||!period||!auth.currentUser)return;const item=guardias.find(g=>g.id===btn.dataset.removeGuard);if(!item||item.createdBy!==auth.currentUser.uid){alert('Solo podés quitar inscripciones creadas desde esta sesión.');return}if(!confirm(`¿Quitar a ${item.name} de ${dayLabel(item.day)}${item.task==='General'?'':' · '+item.task}? Las demás asignaciones no se modificarán.`))return;btn.disabled=true;try{await remove(ref(db,'guardias/'+period.id+'/'+item.id))}catch(err){alert('No se pudo quitar la guardia: '+(err.code||err.message))}finally{btn.disabled=false}});
+$('roster').addEventListener('click',async e=>{
+  const btn=e.target.closest('[data-remove-guard]');if(!btn||!connected||!period||!auth.currentUser)return;
+  const item=guardias.find(g=>g.id===btn.dataset.removeGuard);if(!item)return;
+  if(!confirm(`¿Quitar la guardia de ${item.name} de ${dayLabel(item.day)}${item.task==='General'?'':' · '+item.task}? Podés hacerlo desde cualquier dispositivo.`))return;
+  btn.disabled=true;
+  try{const matches=allGuardias.filter(g=>sameSlot(g,item));for(const g of matches)await remove(ref(db,'guardias/'+period.id+'/'+g.id));}
+  catch(err){alert('No se pudo quitar la guardia: '+(err.code||err.message))}finally{btn.disabled=false}
+});
 $('findName').addEventListener('input',()=>{chosen=null;renderSuggestions();renderTasks()});$('suggestions').addEventListener('click',e=>{const b=e.target.closest('[data-person]');if(!b)return;chosen=allPeople().find(p=>p.id===b.dataset.person);$('findName').value=chosen?.name||'';$('suggestions').innerHTML='';renderSuggestions();renderTasks()});$('dayOptions').addEventListener('change',renderTasks);
 $('newCompany').innerHTML='<option value="">Seleccionar empresa…</option>'+companies.map(c=>`<option value="${c.id}">${esc(c.name)} · ${esc(c.category)}</option>`).join('');
 $('registerForm').addEventListener('submit',async e=>{e.preventDefault();if(!connected)return;const name=$('newName').value.trim().replace(/\s+/g,' '),company=$('newCompany').value;const feedback=$('registerStatus');if(name.length<3||name.length>80||!companies.some(c=>c.id===company))return;if(allPeople().some(p=>p.company===company&&p.name.toLocaleLowerCase('es')===name.toLocaleLowerCase('es'))){feedback.textContent='Esa persona ya está registrada en la empresa.';return}const btn=$('registerButton');btn.disabled=true;try{const key=push(ref(db,'personas')).key;await set(ref(db,'personas/'+key),{name,company,createdAt:serverTimestamp(),createdBy:auth.currentUser.uid});feedback.textContent='✅ ¡Listo! Ya podés buscar tu nombre y anotarte.';$('registerForm').reset();$('findName').value=name;chosen=null;renderSuggestions()}catch(err){feedback.textContent='No se pudo registrar: '+err.code+'. Revisá que estén publicadas las reglas nuevas de Realtime Database.'}finally{btn.disabled=!connected}});
@@ -136,28 +149,30 @@ $('enroll').addEventListener('click',async()=>{
     if(!tasks.length){alert('Elegí al menos una tarea para '+dayLabel(day));return}
     for(const task of tasks)entries.push({day,task});
   }
-  if(!confirm(`¿Confirmás ${chosen.name} (${companies[+chosen.company].name}) para ${days.length} día(s) y ${entries.length} asignación(es)?`))return;
+  const toReplace=entries.flatMap(entry=>{const desired={company:chosen.company,day:entry.day,task:entry.task};const match=guardias.find(g=>sameSlot(g,desired));return match&&match.personId!==chosen.id?[match]:[]});
+  const replacements=[...new Map(toReplace.map(g=>[slot(g),g])).values()];
+  const details=replacements.length?'\n\nReemplazará a: '+replacements.map(g=>g.name+' ('+dayLabel(g.day)+(g.task==='General'?'':' · '+g.task)+')').join('; '):'';
+  if(!confirm(`¿Confirmás ${chosen.name} (${companies[+chosen.company].name}) para ${days.length} día(s)?${details}`))return;
   const button=$('enroll');button.disabled=true;
-  let saved=0,already=0,rejected=0;
+  let saved=0,already=0,rejected=0,errors=[];
   for(const entry of entries){
-    const key=[chosen.id,entry.day,entry.task].join('_').replace(/[^A-Za-z0-9_-]/g,'-');
-    const target=ref(db,'guardias/'+period.id+'/'+key);
+    const desired={personId:chosen.id,name:chosen.name,company:chosen.company,day:entry.day,task:entry.task};
+    const old=guardias.find(g=>sameSlot(g,desired));
+    if(old?.personId===chosen.id){already++;continue}
+    const key=keyFor(desired);const target=ref(db,'guardias/'+period.id+'/'+key);
     try{
-      // Evitamos intentar sobrescribir guardias anteriores: las reglas solo permiten altas nuevas.
-      const snapshot=await get(target);
-      if(snapshot.exists()){already++;continue}
-      await set(target,{personId:chosen.id,name:chosen.name,company:chosen.company,day:entry.day,task:entry.task,createdAt:serverTimestamp(),createdBy:auth.currentUser.uid});
+      await set(target,{...desired,createdAt:serverTimestamp(),createdBy:auth.currentUser.uid});
       saved++;
-    }catch(err){
-      // Si otro dispositivo anotó esta misma guardia mientras tanto, clasificamos como duplicado.
-      try{if((await get(target)).exists()){already++;continue}}catch(_){}
-      rejected++;console.error('Error al guardar guardia:',entry,err);
-    }
+      // Eliminamos registros anteriores de esa casilla una vez asegurado el nuevo registro.
+      for(const legacy of allGuardias.filter(g=>sameSlot(g,desired)&&g.id!==key)){
+        try{await remove(ref(db,'guardias/'+period.id+'/'+legacy.id))}catch(err){console.warn('Limpieza pendiente',err)}
+      }
+    }catch(err){rejected++;errors.push(err.code||err.message);console.error('Error al guardar guardia:',entry,err)}
   }
   const parts=[];
-  if(saved)parts.push(`✅ ${saved} guardia(s) guardada(s)`);
-  if(already)parts.push(`${already} ya estaba(n) anotada(s)`);
-  if(rejected)parts.push(`⚠ ${rejected} rechazada(s) por Firebase; si eran nuevas, avisame para revisar las reglas`);
+  if(saved)parts.push(`✅ ${saved} guardia(s) guardada(s) / reemplazada(s)`);
+  if(already)parts.push(`${already} ya correspondía(n) a esta persona`);
+  if(rejected)parts.push(`⚠ ${rejected} rechazada(s): ${[...new Set(errors)].join(', ')}`);
   $('enrollHelp').textContent=parts.join(' · ')||'No hubo cambios.';
   button.disabled=false;
 });
