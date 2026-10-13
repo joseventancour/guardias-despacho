@@ -120,6 +120,21 @@ function slot(g){return groupCompany(g.company)+'|'+g.day+'|'+( ['63','65'].incl
 function keyFor(g){const slug={'General':'G','Cierre':'C','Reprogramación':'R','Programación':'P','Balance':'B'}[g.task]||'G';return 'slot_'+groupCompany(g.company)+'_'+g.day.replace(/-/g,'')+'_'+slug}
 function currentGuardias(rows){const result=new Map();for(const g of rows){const k=slot(g),prev=result.get(k);if(!prev||Number(g.createdAt||0)>Number(prev.createdAt||0)||(Number(g.createdAt||0)===Number(prev.createdAt||0)&&g.id===keyFor(g)))result.set(k,g)}return [...result.values()]}
 function sameSlot(a,b){return slot(a)===slot(b)}
+// Diagnóstico local: no modifica las reglas ni muestra tokens/credenciales.
+function inspectAssignment(payload, path){
+  const valid={
+    period:/^\d{4}-\d{2}-\d{2}_\d{4}-\d{2}-\d{2}$/.test(period.id),
+    personId:typeof payload.personId==='string'&&/^[A-Za-z0-9_-]{3,80}$/.test(payload.personId),
+    name:typeof payload.name==='string'&&payload.name.length>=3&&payload.name.length<=80,
+    company:typeof payload.company==='string'&&/^(?:[0-9]|[1-5][0-9]|6[0-6])$/.test(payload.company),
+    day:typeof payload.day==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(payload.day),
+    task:['General','Cierre','Reprogramación','Programación','Balance'].includes(payload.task),
+    taskCompany: ['63','64','65','66'].includes(payload.company)?payload.task!=='General':payload.task==='General',
+    session:!!auth.currentUser?.uid
+  };
+  const debug={path,companyId:payload.company,day:payload.day,task:payload.task,personId:payload.personId,validations:valid};
+  return {debug, failures:Object.keys(valid).filter(k=>!valid[k])};
+}
 function listenGuardias(){if(!db||!connected||!period)return;if(offGuards){offGuards();offGuards=null}offGuards=onValue(ref(db,'guardias/'+period.id),snap=>{allGuardias=Object.entries(snap.val()||{}).map(([id,item])=>({id,...item}));guardias=currentGuardias(allGuardias);renderRoster()},e=>{$('syncStatus').textContent='Error lectura: '+e.code;connected=false;updateButton()})}
 const cats=['TODAS','PRODUCTORES','ENTES NACIONALES','DISTCOS','COMERS','PLANTAS','TRANSCOS'];
 function renderRoster(){
@@ -169,6 +184,13 @@ $('enroll').addEventListener('click',async()=>{
     const old=guardias.find(g=>sameSlot(g,desired));
     if(old?.personId===chosen.id){already++;continue}
     const key=keyFor(desired);const target=ref(db,'guardias/'+period.id+'/'+key);
+    const path='guardias/'+period.id+'/'+key;
+    const diagnosis=inspectAssignment(desired,path);
+    if(diagnosis.failures.length){
+      rejected++;errors.push('Datos inválidos: '+diagnosis.failures.join(', '));
+      console.warn('Guardia no enviada: datos inválidos',diagnosis.debug);
+      continue;
+    }
     try{
       await set(target,{...desired,createdAt:serverTimestamp(),createdBy:auth.currentUser.uid});
       saved++;
@@ -176,7 +198,11 @@ $('enroll').addEventListener('click',async()=>{
       for(const legacy of allGuardias.filter(g=>sameSlot(g,desired)&&g.id!==key)){
         try{await remove(ref(db,'guardias/'+period.id+'/'+legacy.id))}catch(err){console.warn('Limpieza pendiente',err)}
       }
-    }catch(err){rejected++;errors.push(err.code||err.message);console.error('Error al guardar guardia:',entry,err)}
+    }catch(err){
+      rejected++;
+      errors.push((err.code||err.message)+' [empresa '+desired.company+', '+desired.day+', '+desired.task+']');
+      console.error('Firebase rechazó la escritura. Diagnóstico sin credenciales:',diagnosis.debug,'Código:',err.code||err.message);
+    }
   }
   const parts=[];
   if(saved)parts.push(`✅ ${saved} guardia(s) guardada(s) / reemplazada(s)`);
