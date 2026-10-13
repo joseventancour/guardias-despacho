@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#10263c">
+<title>Guardias Despacho | Sector Gas</title>
+<style>
+:root{font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;color:#172b40;background:#f3f6fa}*{box-sizing:border-box}body{margin:0}header{background:linear-gradient(120deg,#0d253d,#155581);color:white;padding:22px max(18px,calc((100vw - 1160px)/2));display:flex;align-items:center;justify-content:space-between;gap:16px}.brand{font-size:clamp(23px,4vw,32px);font-weight:800;letter-spacing:-.7px}.sub{font-size:13px;opacity:.82;margin-top:3px}.tag{font-size:12px;background:#ffffff23;border:1px solid #ffffff33;border-radius:99px;padding:7px 12px;white-space:nowrap}main{max-width:1160px;margin:0 auto;padding:24px 18px 70px}.notice{background:#eaf4ff;border:1px solid #b8d8f3;color:#1e4a73;padding:12px 16px;border-radius:12px;font-size:13px;line-height:1.5;margin-bottom:18px}.toolbar{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px}.search{flex:2;min-width:230px}input,select,button{font:inherit}input,select{width:100%;padding:13px 14px;border:1px solid #cbd7e4;border-radius:10px;background:white;color:#20384d;outline-color:#1768a3}button{border:0;border-radius:9px;padding:11px 14px;cursor:pointer;font-weight:650}.primary{background:#1267ac;color:white}.secondary{background:#ebf2f8;color:#254761}.tabs{display:flex;gap:7px;overflow-x:auto;padding-bottom:10px;margin-bottom:8px} .tabs button{flex:none;white-space:nowrap;background:white;color:#31506b;border:1px solid #d6e0e9}.tabs button.active{background:#1267ac;color:white;border-color:#1267ac}.meta{display:flex;align-items:center;justify-content:space-between;gap:10px;color:#5f7386;font-size:13px;margin-bottom:13px}.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.card{background:white;border:1px solid #dbe4ed;border-radius:14px;box-shadow:0 3px 12px #1a426008;overflow:hidden}.card-head{display:flex;justify-content:space-between;align-items:start;padding:16px;gap:8px}.company{font-size:17px;font-weight:750}.category{color:#587590;font-size:12px;margin-top:5px}.pill{background:#edf5ff;border-radius:6px;color:#1a5e94;font-size:11px;padding:3px 6px}.guard-list{padding:0 16px 15px}.guard{border-top:1px solid #eef1f5;padding:10px 0;display:flex;gap:10px;align-items:baseline;justify-content:space-between}.slot{font-size:12px;color:#728497;min-width:100px}.person{font-size:14px;text-align:right;overflow-wrap:anywhere}.actions{padding:0 16px 15px;display:flex;justify-content:flex-end}.empty{padding:40px;text-align:center;color:#647587;background:white;border:1px solid #dbe4ed;border-radius:12px}.overlay{position:fixed;inset:0;background:#0e263c90;display:none;align-items:center;justify-content:center;padding:16px;z-index:4}.overlay.show{display:flex}.dialog{background:white;border-radius:18px;padding:24px;max-width:540px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 12px 60px #0003}.dialog h2{margin:0 0 6px}.small{font-size:13px;color:#62768b}.field{margin-top:15px}.field label{display:block;font-size:13px;font-weight:700;margin-bottom:6px}.formbuttons{display:flex;gap:10px;justify-content:flex-end;margin-top:22px}.footer{text-align:center;color:#718295;font-size:12px;margin-top:36px;line-height:1.7} .muted{color:#8293a2}@media(max-width:700px){.cards{grid-template-columns:1fr}header{align-items:flex-start}.tag{white-space:normal}.guard{align-items:start}.slot{min-width:88px}}
+</style>
+</head>
+<body>
+<header><div><div class="brand">◷ Guardias Despacho</div><div class="sub">Directorio de guardias · Sector Gas</div></div><span class="tag">Versión de prueba</span></header>
+<main>
+<div class="notice"><strong>Importante:</strong> esta primera versión permite probar la búsqueda y editar datos <strong>solo en este navegador</strong>. Todavía no sincroniza cambios con otras personas ni tiene usuarios y permisos. No ingreses información sensible hasta que configuremos el acceso.</div>
+<div class="toolbar"><input id="search" class="search" type="search" placeholder="Buscar empresa o responsable…" aria-label="Buscar empresa o responsable"><button class="secondary" id="copy">Copiar listado visible</button></div>
+<nav class="tabs" id="tabs" aria-label="Categorías"></nav><div class="meta"><span id="count"></span><span>Datos de ejemplo · confirmar vigencia</span></div>
+<section class="cards" id="cards" aria-live="polite"></section><footer class="footer">Guardias Despacho · Proyecto independiente de consulta de guardias<br>La información inicial es ilustrativa y debe ser confirmada por cada empresa.</footer>
+</main>
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="dialogTitle"><div class="dialog"><h2 id="dialogTitle">Editar guardia</h2><div class="small" id="dialogSub"></div><form id="editor"><div class="field"><label for="slot">Día / función / turno</label><input id="slot" required maxlength="90" placeholder="Ej.: Sábado · Programación"></div><div class="field"><label for="person">Persona o teléfono de guardia</label><input id="person" required maxlength="160" placeholder="Nombre y apellido"></div><div class="formbuttons"><button type="button" class="secondary" id="cancel">Cancelar</button><button type="submit" class="primary">Guardar en este navegador</button></div></form><p class="small">Esta edición no se publica para otros usuarios. La guardia real necesita una base de datos y permisos.</p></div></div>
+<script>
+'use strict';
+const raw = [
+['PRODUCTORES','CAPEX','Todos los días|Matías Alessandrello'],
+['PRODUCTORES','CGC','Todos los días|Pamela Villar'],
+['PRODUCTORES','EQUINOR, OILSTONE, PSM & SHELL','Todos los días|Julián Miglino'],
+['PRODUCTORES','HARBOUR (WINTERSHALL)','Todos los días|Candela Tau'],
+['PRODUCTORES','PAE','Todos los días|Nicolás Bovio'],
+['PRODUCTORES','PAMPA ENERGÍA','Todos los días|Diego Habringer'],
+['PRODUCTORES','PBB - DOW','Todos los días|Lucía Carrera'],
+['PRODUCTORES','PLUSPETROL & EXXON','Todos los días|Rodrigo Manassero'],
+['PRODUCTORES','POSA','Todos los días|Pablo Gabriel Seoane'],
+['PRODUCTORES','TANGO ENERGY','Todos los días|Thiago Sánchez'],
+['PRODUCTORES','TECPETROL','Todos los días|Emilce Ayroldi'],
+['PRODUCTORES','TOTAL','Todos los días · Cierre|Luis Gianetto-Kilvain','Todos los días · Repro & Progra|Silvio Martínez'],
+['PRODUCTORES','ROCH','Todos los días|Ariel Cotello'],
+['PRODUCTORES','VISTA','Todos los días|Leandro Muñoz'],
+['PRODUCTORES','YPF','Sábado|Lucas Huerga','Domingo|Marco D\'Andrea'],
+['ENTES NACIONALES','CAMMESA','Todos los días|Juan Blas Perotti'],
+['ENTES NACIONALES','ENARSA','Sábado|Pablo Signore','Domingo|Lucila Locampo'],
+['ENTES NACIONALES','MEGSA','Todos los días|4316-7170'],
+['DISTCOS','CAMUZZI','Sábado · Cierre & Repro|Axel Acuña Saez','Sábado · Progra|Miguel Kurylowicz','Domingo · Cierre & Repro|Axel Acuña Saez','Domingo · Progra|Gustavo Alegría'],
+['DISTCOS','ECOGAS CENTRO / CUYANA','Todos los días|Pablo Tofalo','Cel Centro|3516141320','Cel Cuyana|2616504690'],
+['DISTCOS','GASNEA','Todos los días|+54 9 11 4565-7492'],
+['DISTCOS','NATURGY BAN','Todos los días|Astrid Castañeda'],
+['DISTCOS','NATURGY NOA','Todos los días|Diego Villalba'],
+['DISTCOS','LITORAL','Todos los días|Francisco Aldasoro & Gustavo Covolo'],
+['DISTCOS','METRO','Todos los días|Julio Lauga'],
+['COMERS','ABC','Todos los días|Agustín Lovato'],
+['COMERS','ALENSA','Todos los días|Manuel Corbalán'],
+['COMERS','ALPES / ENERGÍA FEDERAL','Todos los días|Fernanda Prieto'],
+['COMERS','AMBAR','Todos los días|Sergio Escalante'],
+['COMERS','AMG','Todos los días|Camila Abraham'],
+['COMERS','ANDINA','Todos los días|Luz Molinari'],
+['COMERS','APAHIE','Todos los días|Agustín Campanelli'],
+['COMERS','CAMUZZI ENERGÍA','Todos los días|Facundo Bollini'],
+['COMERS','CENTRAL PUERTO','Todos los días|Agustina Giacomosso'],
+['COMERS','CERRI','Todos los días|Guadalupe Giménez'],
+['COMERS','CINERGIA','Todos los días|Belén Zubillaga'],
+['COMERS','CIPRÉS','Todos los días|Franco Martoccia'],
+['COMERS','COROCOTTA','Todos los días|Julián Tezanos & Agustín López'],
+['COMERS','ECS','Todos los días|Mabel Benítez'],
+['COMERS','ENERGEIA','Todos los días|Dante Olea'],
+['COMERS','ENERGIX','Todos los días|Leonardo Niveiro'],
+['COMERS','FÉNIX','Todos los días|Victoria Burgos'],
+['COMERS','FIDELIA','Todos los días|Pablo Gabriel Seoane'],
+['COMERS','GASENER / MADALENA ENERGY','Todos los días|Fernando Villamonte'],
+['COMERS','GAS SMART','Todos los días|Agustina Monteabaro'],
+['COMERS','GENNEIA','Todos los días|Julián Fassio'],
+['COMERS','HFV','Todos los días|Daniel Campanelli'],
+['COMERS','INFINITY ENERGY','Todos los días|Nicolás Horrach'],
+['COMERS','LA HORQUETA','Todos los días|Ariana Carusi'],
+['COMERS','LATIN','Todos los días|Francisco Porres'],
+['COMERS','MERIDIONAL','Todos los días|Germán Iglesias'],
+['COMERS','METROENERGÍA','Sábado|Walter Chavez','Domingo|Mariano Cascardo'],
+['COMERS','NESA & GAS MARKET','Todos los días|Sergio Aragón'],
+['COMERS','ORAZUL ENERGÍA','Todos los días|Hernán Chisari'],
+['COMERS','PANGEA','Todos los días|Manuel Corbalán'],
+['COMERS','PATAGONIA','Todos los días|Lucila Sevillano'],
+['COMERS','PODESTÁ','Todos los días|Blas Lefebvre'],
+['COMERS','SAESA','Todos los días|Julián Miglino'],
+['COMERS','TEPSI GAS','Todos los días|Pablo Ganz'],
+['COMERS','WE ENERGY','Todos los días|Victoria Valentini'],
+['PLANTAS','REFINOR','Todos los días|Daniela Macia & Darío Damichici'],
+['PLANTAS','TRATAYÉN - VMS','Todos los días|+549-299-423-7223'],
+['PLANTAS','YPF LUZ','Todos los días|Federico Larosa'],
+['TRANSCOS','TGN - Programación','Sábado|Salvador Briasco & Guillermo Solier','Domingo|Salvador Briasco & Ignacio Schwarzkopf'],
+['TRANSCOS','TGN - Balance','Todos los días|Makarena Tapia'],
+['TRANSCOS','TGS - Programación','Sábado · Turno Mañana|Maximiliano Ciceri','Sábado · Turno Tarde|Natalia Chico','Domingo · Turno Mañana|Natalia Chico','Domingo · Turno Tarde|Claudio Darío Rolón'],
+['TRANSCOS','TGS - Monitoreo','Todos los días|Adrián Mayze']
+];
+const base=raw.map((r,i)=>({id:i,category:r[0],name:r[1],guards:r.slice(2).map(v=>{const x=v.split('|');return {slot:x[0],person:x.slice(1).join('|')}})}));
+const escapeHtml=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let saved={};try{saved=JSON.parse(localStorage.getItem('gd_local_v1')||'{}')||{}}catch(e){};
+const data=base.map(item=>({...item,guards:item.guards.map((g,j)=> saved[item.id+'-'+j] ? {...saved[item.id+'-'+j]} : g)}));
+const categories=['TODAS','PRODUCTORES','ENTES NACIONALES','DISTCOS','COMERS','PLANTAS','TRANSCOS'];let active='TODAS',editing=null;
+const $=id=>document.getElementById(id);
+function visible(){let q=$('search').value.trim().toLocaleLowerCase('es');return data.filter(d=>(active==='TODAS'||d.category===active)&&(!q||[d.name,d.category,...d.guards.flatMap(g=>[g.slot,g.person])].join(' ').toLocaleLowerCase('es').includes(q)))}
+function render(){ $('tabs').innerHTML=categories.map(c=>`<button data-cat="${c}" class="${active===c?'active':''}" aria-pressed="${active===c}">${c==='TODAS'?'Todas':c==='ENTES NACIONALES'?'Entes nacionales':c[0]+c.slice(1).toLowerCase()}</button>`).join('');const items=visible();$('count').textContent=`${items.length} empresas / áreas`; $('cards').innerHTML=items.length?items.map(d=>`<article class="card"><div class="card-head"><div><div class="company">${escapeHtml(d.name)}</div><div class="category">${escapeHtml(d.category)}</div></div><span class="pill">${d.guards.length} ${d.guards.length===1?'guardia':'guardias'}</span></div><div class="guard-list">${d.guards.map(g=>`<div class="guard"><span class="slot">${escapeHtml(g.slot)}</span><span class="person">${escapeHtml(g.person)}</span></div>`).join('')}</div><div class="actions"><button class="secondary" data-edit="${d.id}">✎ Probar edición</button></div></article>`).join(''):'<div class="empty">No encontramos empresas con esa búsqueda.</div>'}
+$('tabs').addEventListener('click',e=>{const b=e.target.closest('[data-cat]');if(b){active=b.dataset.cat;render()}});$('search').addEventListener('input',render);
+$('cards').addEventListener('click',e=>{const b=e.target.closest('[data-edit]');if(!b)return;const id=Number(b.dataset.edit),item=data[id];editing=id;$('dialogTitle').textContent='Editar guardia · '+item.name;$('dialogSub').textContent='Prueba local — modifica la primera guardia de esta empresa';$('slot').value=item.guards[0].slot;$('person').value=item.guards[0].person;$('overlay').classList.add('show');$('person').focus()});
+function close(){$('overlay').classList.remove('show');editing=null}$('cancel').onclick=close;$('overlay').onclick=e=>{if(e.target===$('overlay'))close()};document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
+$('editor').addEventListener('submit',e=>{e.preventDefault();if(editing===null)return;const obj={slot:$('slot').value.trim(),person:$('person').value.trim()};if(!obj.slot||!obj.person)return;data[editing].guards[0]=obj;saved[editing+'-0']=obj;try{localStorage.setItem('gd_local_v1',JSON.stringify(saved))}catch(e){};close();render()});
+$('copy').onclick=async()=>{let list=visible().map(d=>d.name+':\n'+d.guards.map(g=>'- '+g.slot+': '+g.person).join('\n')).join('\n\n');try{await navigator.clipboard.writeText(list);$('copy').textContent='✓ Copiado';setTimeout(()=>$('copy').textContent='Copiar listado visible',1600)}catch(e){alert('No se pudo copiar. Probá con otro navegador.')}};
+render();
+</script>
+</body></html>
