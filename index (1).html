@@ -1,0 +1,125 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#10283d"><title>Guardias Despacho · Inscripciones</title>
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#16334a;background:#f4f7fb}*{box-sizing:border-box}body{margin:0}header{background:linear-gradient(120deg,#0d253d,#17658e);color:#fff;padding:24px max(18px,calc((100% - 1080px)/2));display:flex;justify-content:space-between;gap:12px;align-items:center}header h1{margin:0;font-size:clamp(23px,4vw,32px)}header p{margin:4px 0 0;color:#d4e6f0;font-size:13px}main{max-width:1080px;margin:auto;padding:22px 16px 60px}.notice{background:#e8f4ff;border:1px solid #bfd9f0;padding:15px;border-radius:13px;font-size:13px;line-height:1.55;margin-bottom:17px}.hero{background:#fff;border:1px solid #dce7f0;border-radius:16px;padding:20px;margin-bottom:18px}.hero h2{margin:0 0 8px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.panel{background:white;border:1px solid #dce7f0;border-radius:15px;padding:20px;margin-bottom:18px;min-width:0}.panel h2{font-size:19px;margin:0 0 13px}.muted{color:#63798b;font-size:13px;line-height:1.5}.status{display:inline-flex;align-items:center;border-radius:100px;background:#e6f1fa;color:#145b86;padding:6px 11px;font-size:12px;font-weight:700}.row{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}.field{margin:13px 0}.field label{display:block;font-weight:700;font-size:13px;margin-bottom:7px}input,select,button{font:inherit}input,select{width:100%;border:1px solid #cddce8;border-radius:10px;padding:11px;background:#fff;color:#16334a}button{border:0;border-radius:9px;padding:11px 14px;cursor:pointer;font-weight:650}.primary{background:#1469a5;color:#fff}.secondary{background:#eaf1f8;color:#1d5074}.danger{background:#ffeded;color:#a22a2a}.primary:disabled,button:disabled{opacity:.45;cursor:not-allowed}.person-choice{display:block;width:100%;background:#f1f7fb;border:1px solid #d7e3ec;margin:6px 0;text-align:left}.found{border-left:4px solid #1d82bc;background:#f1f8fe;padding:12px;border-radius:8px;margin-top:12px}.list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.company{border:1px solid #dce7f0;padding:14px;border-radius:12px;background:#fff}.company strong{display:block;margin-bottom:4px}.chip{display:inline-block;background:#ebf4f8;border-radius:5px;font-size:11px;padding:4px 6px;margin:3px 3px 0 0;color:#2a627e}.item{padding:9px 0;border-top:1px solid #eef1f5;margin-top:9px;font-size:14px}.tabs{display:flex;gap:7px;overflow-x:auto;padding:8px 0 16px}.tabs button{white-space:nowrap;flex-shrink:0}.tabs button.active{background:#1469a5;color:white}.footer{color:#738b9c;font-size:12px;text-align:center;line-height:1.7;margin-top:24px}small{color:#657b8b}a{color:#1269a9}.hidden{display:none!important}@media(max-width:730px){.grid,.list{grid-template-columns:1fr}header{align-items:flex-start} .panel{padding:16px}}
+</style></head><body><header><div><h1>◷ Guardias Despacho</h1><p>Inscripción y consulta · Sector Gas</p></div><span class="status">Prototipo</span></header><main>
+<div class="notice"><strong>Versión de prueba:</strong> los registros y las guardias se guardan <strong>solamente en este navegador</strong>, no se comparten entre personas ni verifican la identidad. No ingreses datos personales reales o sensibles. Las aprobaciones de este prototipo son simuladas; antes del uso real conectaremos autenticación, permisos y una base de datos compartida.</div>
+<section class="hero"><div class="row"><div><h2 id="periodTitle">Buscando próximos períodos de guardia…</h2><div class="muted" id="periodDesc">Horario argentino · America/Argentina/Buenos_Aires</div></div><span class="status" id="windowStatus">Verificando</span></div><div class="muted" id="holidayStatus" style="margin-top:12px">Consultando calendario de feriados…</div><div class="muted" style="margin-top:8px">La cobertura y la inscripción son intervalos diferentes. Feriado aislado: cobertura de 08:00 del feriado a 08:00 del día siguiente. Los períodos consecutivos se unifican.</div></section>
+<div class="grid"><section class="panel"><h2>1. Encontrá tu nombre</h2><p class="muted">Buscá una persona registrada; al seleccionarla, el sistema identifica su empresa.</p><div class="field"><label for="findName">Nombre y apellido</label><input id="findName" autocomplete="off" placeholder="Ej.: Caterina, Camila, Lucas…"></div><div id="suggestions"></div><div id="selected" class="found hidden"></div><div class="field"><label for="shift">Día / función / turno</label><input id="shift" maxlength="90" placeholder="Ej.: Sábado · Programación"></div><button id="enroll" class="primary" disabled>Anotarme para el período</button><p class="muted" id="enrollHelp">Solo se habilita durante la ventana de inscripción.</p></section>
+<section class="panel"><h2>2. ¿Sos nuevo? Registrate</h2><p class="muted">Si no aparecés en la búsqueda, enviá una solicitud para asociarte con tu empresa.</p><form id="requestForm"><div class="field"><label for="newName">Nombre completo</label><input id="newName" required maxlength="90" placeholder="Nombre y apellido"></div><div class="field"><label for="newCompany">Empresa</label><select id="newCompany" required></select></div><div class="field"><label for="newRole">Función (opcional)</label><input id="newRole" maxlength="90" placeholder="Programación, cierre, balance…"></div><button class="primary" type="submit">Solicitar alta</button></form><div id="requestFeedback" class="muted" style="margin-top:10px"></div><p class="muted">Una persona nueva queda pendiente hasta su aprobación. En la versión real se aprobará con una cuenta autorizada.</p></section></div>
+<section class="panel"><div class="row"><h2>Personas pendientes de aprobación</h2><span class="status" id="pendingCount">0 pendientes</span></div><p class="muted">Panel de demostración local. Los botones de aprobación no son seguros ni reemplazan a un administrador autenticado.</p><div id="pending"></div></section>
+<section class="panel"><div class="row"><h2>Guardias del período</h2><button id="copy" class="secondary">Copiar listado</button></div><p class="muted" id="rosterDesc">Solo se muestran las personas que se inscribieron para el período seleccionado. Al abrir un período nuevo, aparece vacío.</p><div class="tabs" id="categories"></div><div class="field"><input id="companySearch" type="search" placeholder="Filtrar empresa o responsable…"></div><div id="roster" class="list"></div></section>
+<footer class="footer">Guardias Despacho · Sitio independiente · Calendario automático sujeto a verificación.<br>Referencia oficial: <a href="https://www.argentina.gob.ar/feriados" target="_blank" rel="noopener">Feriados nacionales de Argentina</a>.</footer></main>
+<script>
+'use strict';
+const raw = [
+
+['PRODUCTORES','CAPEX','Todos los días|Matías Alessandrello'],
+['PRODUCTORES','CGC','Todos los días|Pamela Villar'],
+['PRODUCTORES','EQUINOR, OILSTONE, PSM & SHELL','Todos los días|Julián Miglino'],
+['PRODUCTORES','HARBOUR (WINTERSHALL)','Todos los días|Candela Tau'],
+['PRODUCTORES','PAE','Todos los días|Nicolás Bovio'],
+['PRODUCTORES','PAMPA ENERGÍA','Todos los días|Diego Habringer'],
+['PRODUCTORES','PBB - DOW','Todos los días|Lucía Carrera'],
+['PRODUCTORES','PLUSPETROL & EXXON','Todos los días|Rodrigo Manassero'],
+['PRODUCTORES','POSA','Todos los días|Pablo Gabriel Seoane'],
+['PRODUCTORES','TANGO ENERGY','Todos los días|Thiago Sánchez'],
+['PRODUCTORES','TECPETROL','Todos los días|Emilce Ayroldi'],
+['PRODUCTORES','TOTAL','Todos los días · Cierre|Luis Gianetto-Kilvain','Todos los días · Repro & Progra|Silvio Martínez'],
+['PRODUCTORES','ROCH','Todos los días|Ariel Cotello'],
+['PRODUCTORES','VISTA','Todos los días|Leandro Muñoz'],
+['PRODUCTORES','YPF','Sábado|Lucas Huerga','Domingo|Marco D\'Andrea'],
+['ENTES NACIONALES','CAMMESA','Todos los días|Juan Blas Perotti'],
+['ENTES NACIONALES','ENARSA','Sábado|Pablo Signore','Domingo|Lucila Locampo'],
+['ENTES NACIONALES','MEGSA','Todos los días|4316-7170'],
+['DISTCOS','CAMUZZI','Sábado · Cierre & Repro|Axel Acuña Saez','Sábado · Progra|Miguel Kurylowicz','Domingo · Cierre & Repro|Axel Acuña Saez','Domingo · Progra|Gustavo Alegría'],
+['DISTCOS','ECOGAS CENTRO / CUYANA','Todos los días|Pablo Tofalo','Cel Centro|3516141320','Cel Cuyana|2616504690'],
+['DISTCOS','GASNEA','Todos los días|+54 9 11 4565-7492'],
+['DISTCOS','NATURGY BAN','Todos los días|Astrid Castañeda'],
+['DISTCOS','NATURGY NOA','Todos los días|Diego Villalba'],
+['DISTCOS','LITORAL','Todos los días|Francisco Aldasoro & Gustavo Covolo'],
+['DISTCOS','METRO','Todos los días|Julio Lauga'],
+['COMERS','ABC','Todos los días|Agustín Lovato'],
+['COMERS','ALENSA','Todos los días|Manuel Corbalán'],
+['COMERS','ALPES / ENERGÍA FEDERAL','Todos los días|Fernanda Prieto'],
+['COMERS','AMBAR','Todos los días|Sergio Escalante'],
+['COMERS','AMG','Todos los días|Camila Abraham'],
+['COMERS','ANDINA','Todos los días|Luz Molinari'],
+['COMERS','APAHIE','Todos los días|Agustín Campanelli'],
+['COMERS','CAMUZZI ENERGÍA','Todos los días|Facundo Bollini'],
+['COMERS','CENTRAL PUERTO','Todos los días|Agustina Giacomosso'],
+['COMERS','CERRI','Todos los días|Guadalupe Giménez'],
+['COMERS','CINERGIA','Todos los días|Belén Zubillaga'],
+['COMERS','CIPRÉS','Todos los días|Franco Martoccia'],
+['COMERS','COROCOTTA','Todos los días|Julián Tezanos & Agustín López'],
+['COMERS','ECS','Todos los días|Mabel Benítez'],
+['COMERS','ENERGEIA','Todos los días|Dante Olea'],
+['COMERS','ENERGIX','Todos los días|Leonardo Niveiro'],
+['COMERS','FÉNIX','Todos los días|Victoria Burgos'],
+['COMERS','FIDELIA','Todos los días|Pablo Gabriel Seoane'],
+['COMERS','GASENER / MADALENA ENERGY','Todos los días|Fernando Villamonte'],
+['COMERS','GAS SMART','Todos los días|Agustina Monteabaro'],
+['COMERS','GENNEIA','Todos los días|Julián Fassio'],
+['COMERS','HFV','Todos los días|Daniel Campanelli'],
+['COMERS','INFINITY ENERGY','Todos los días|Nicolás Horrach'],
+['COMERS','LA HORQUETA','Todos los días|Ariana Carusi'],
+['COMERS','LATIN','Todos los días|Francisco Porres'],
+['COMERS','MERIDIONAL','Todos los días|Germán Iglesias'],
+['COMERS','METROENERGÍA','Sábado|Walter Chavez','Domingo|Mariano Cascardo'],
+['COMERS','NESA & GAS MARKET','Todos los días|Sergio Aragón'],
+['COMERS','ORAZUL ENERGÍA','Todos los días|Hernán Chisari'],
+['COMERS','PANGEA','Todos los días|Manuel Corbalán'],
+['COMERS','PATAGONIA','Todos los días|Lucila Sevillano'],
+['COMERS','PODESTÁ','Todos los días|Blas Lefebvre'],
+['COMERS','SAESA','Todos los días|Julián Miglino'],
+['COMERS','TEPSI GAS','Todos los días|Pablo Ganz'],
+['COMERS','WE ENERGY','Todos los días|Victoria Valentini'],
+['PLANTAS','REFINOR','Todos los días|Daniela Macia & Darío Damichici'],
+['PLANTAS','TRATAYÉN - VMS','Todos los días|+549-299-423-7223'],
+['PLANTAS','YPF LUZ','Todos los días|Federico Larosa'],
+['TRANSCOS','TGN - Programación','Sábado|Salvador Briasco & Guillermo Solier','Domingo|Salvador Briasco & Ignacio Schwarzkopf'],
+['TRANSCOS','TGN - Balance','Todos los días|Makarena Tapia'],
+['TRANSCOS','TGS - Programación','Sábado · Turno Mañana|Maximiliano Ciceri','Sábado · Turno Tarde|Natalia Chico','Domingo · Turno Mañana|Natalia Chico','Domingo · Turno Tarde|Claudio Darío Rolón'],
+['TRANSCOS','TGS - Monitoreo','Todos los días|Adrián Mayze']
+
+];
+const companies=raw.map((r,i)=>({id:String(i),category:r[0],name:r[1]}));
+const seedPeople=[];raw.forEach((r,i)=>r.slice(2).forEach(s=>{const parts=s.split('|'),person=parts.slice(1).join('|').trim();if(!/\d{5}/.test(person))person.split(/\s+&\s+/).forEach(name=>{if(!seedPeople.some(p=>p.name===name.trim()&&p.company===String(i)))seedPeople.push({id:'seed'+seedPeople.length,name:name.trim(),company:String(i),approved:true,role:parts[0]})})}));
+const $=id=>document.getElementById(id);const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const load=(key,fallback)=>{try{const v=JSON.parse(localStorage.getItem('gd2_'+key));return v??fallback}catch{return fallback}};
+const save=(key,value)=>localStorage.setItem('gd2_'+key,JSON.stringify(value));
+let requests=load('people',[]),rosters=load('rosters',{}),holidays={},holidayState='pending',chosen=null,active='TODAS',period=null;
+const zone='America/Argentina/Buenos_Aires';
+function nowAR(){const f=new Intl.DateTimeFormat('en-CA',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date());const o=Object.fromEntries(f.map(x=>[x.type,x.value]));return {ymd:`${o.year}-${o.month}-${o.day}`,hour:+o.hour,minute:+o.minute}}
+function addDays(ymd,n){let d=new Date(ymd+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)}
+function dow(ymd){return new Date(ymd+'T12:00:00Z').getUTCDay()}
+function hh(ymd){return ymd+' 08:00'}
+function fmt(ymd){return new Date(ymd+'T12:00:00Z').toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'})}
+function holiday(ymd){return !!holidays[ymd]}
+function covered(ymd){let d=dow(ymd);return d===0||d===6||holiday(ymd)}
+function calcPeriods(){let today=nowAR().ymd,days=[];for(let n=-16;n<120;n++){const date=addDays(today,n);if(covered(date))days.push(date)}let groups=[];for(let day of days){let g=groups[groups.length-1];if(g&&addDays(g.end,1)===day)g.end=day;else groups.push({start:day,end:day})}return groups.map(g=>{const after=addDays(g.end,1);const begin=addDays(g.start,-1);return {...g,coverStart:hh(g.start),coverEnd:hh(after),open:hh(begin),close:hh(after),id:g.start+'_'+after}})}
+function compareNow(timestamp){const n=nowAR();return (n.ymd+' '+String(n.hour).padStart(2,'0')+':'+String(n.minute).padStart(2,'0')).localeCompare(timestamp)}
+function updatePeriod(){const periods=calcPeriods();period=periods.find(p=>compareNow(p.open)>=0&&compareNow(p.close)<0)||periods.find(p=>compareNow(p.open)<0)||periods[periods.length-1];if(!period)return;const open=compareNow(period.open)>=0&&compareNow(period.close)<0;
+$('periodTitle').textContent=`Cobertura: ${fmt(period.start)} al ${fmt(addDays(period.end,1))}`;
+$('periodDesc').textContent=`Inscripción: ${fmt(addDays(period.start,-1))} 08:00 → ${fmt(addDays(period.end,1))} 08:00 · Cobertura: ${fmt(period.start)} 08:00 → ${fmt(addDays(period.end,1))} 08:00`;
+$('windowStatus').textContent=open?'Inscripción abierta':'Inscripción cerrada';$('enroll').disabled=!open||!chosen||!chosen.approved||holidayState==='pending'||holidayState==='error';$('enrollHelp').textContent=open?'Elegí tu nombre y el turno para anotarte.':'No se aceptan inscripciones fuera del período habilitado.';
+renderRoster()}
+function allPeople(){return [...seedPeople,...requests]}
+function renderSuggestions(){const q=$('findName').value.trim().toLocaleLowerCase('es');const hits=q.length>=2?allPeople().filter(p=>p.name.toLocaleLowerCase('es').includes(q)).slice(0,12):[];
+$('suggestions').innerHTML=hits.map(p=>`<button class="person-choice" data-person="${esc(p.id)}">${esc(p.name)} · ${esc(companies[+p.company]?.name||'?')} ${p.approved?'':'(pendiente)'}</button>`).join('');$('selected').classList.toggle('hidden',!chosen);if(chosen)$('selected').textContent=chosen.name+' · '+companies[+chosen.company].name+(chosen.approved?'':' · Pendiente de aprobación');$('enroll').disabled=!chosen||!chosen.approved||!period||compareNow(period.open)<0||compareNow(period.close)>=0||holidayState==='pending'||holidayState==='error'}
+$('findName').addEventListener('input',()=>{chosen=null;renderSuggestions()});$('suggestions').addEventListener('click',e=>{let b=e.target.closest('[data-person]');if(!b)return;chosen=allPeople().find(p=>p.id===b.dataset.person)||null;$('findName').value=chosen?.name||'';$('suggestions').innerHTML='';renderSuggestions()});
+$('newCompany').innerHTML='<option value="">Seleccionar empresa…</option>'+companies.map(c=>`<option value="${c.id}">${esc(c.name)} · ${esc(c.category)}</option>`).join('');
+$('requestForm').addEventListener('submit',e=>{e.preventDefault();const name=$('newName').value.trim().replace(/\s+/g,' '),company=$('newCompany').value,role=$('newRole').value.trim();if(name.length<3||!companies.some(c=>c.id===company))return;
+if(allPeople().some(p=>p.company===company&&p.name.toLocaleLowerCase('es')===name.toLocaleLowerCase('es'))){$('requestFeedback').textContent='Esa persona ya figura para esa empresa.';return}
+requests.push({id:'local'+Date.now(),name,company,role,approved:false});save('people',requests);$('requestForm').reset();$('requestFeedback').textContent='Solicitud registrada en este navegador. Pendiente de aprobación.';renderPending()});
+function renderPending(){const pending=requests.filter(p=>!p.approved);$('pendingCount').textContent=pending.length+' pendientes';$('pending').innerHTML=pending.length?pending.map(p=>`<div class="row item"><div><strong>${esc(p.name)}</strong> · ${esc(companies[+p.company].name)} <small>${esc(p.role||'')}</small></div><button class="secondary" data-approve="${esc(p.id)}">Aprobar (demo)</button></div>`).join(''):'<div class="muted">No hay solicitudes pendientes en este navegador.</div>'}
+$('pending').addEventListener('click',e=>{const b=e.target.closest('[data-approve]');if(!b)return;const p=requests.find(x=>x.id===b.dataset.approve);if(!p)return;p.approved=true;save('people',requests);renderPending();renderSuggestions()});
+$('enroll').addEventListener('click',()=>{updatePeriod();if(!chosen||!chosen.approved||compareNow(period.open)<0||compareNow(period.close)>=0||holidayState==='pending'||holidayState==='error'){alert('No está habilitado el registro para esta persona o período.');return}const shift=$('shift').value.trim();if(!shift){alert('Indicá el día, la función o el turno.');$('shift').focus();return}let arr=rosters[period.id]||[];if(arr.some(x=>x.personId===chosen.id&&x.shift===shift)){alert('Ya existe esa inscripción para este turno.');return}arr.push({personId:chosen.id,name:chosen.name,company:chosen.company,shift,at:new Date().toISOString()});rosters[period.id]=arr;save('rosters',rosters);$('shift').value='';renderRoster();alert('Anotación de prueba guardada solamente en este navegador.')});
+const cats=['TODAS','PRODUCTORES','ENTES NACIONALES','DISTCOS','COMERS','PLANTAS','TRANSCOS'];
+function renderRoster(){if(!period)return;let arr=rosters[period.id]||[],q=$('companySearch').value.toLocaleLowerCase('es');$('categories').innerHTML=cats.map(c=>`<button class="secondary ${active===c?'active':''}" data-cat="${c}">${c==='TODAS'?'Todas':c}</button>`).join('');const filtered=companies.filter(c=>(active==='TODAS'||c.category===active)&&(!q||(c.name+' '+(arr.filter(a=>a.company===c.id).map(a=>a.name).join(' '))).toLocaleLowerCase('es').includes(q)));
+$('roster').innerHTML=filtered.map(c=>{let people=arr.filter(a=>a.company===c.id);return `<div class="company"><strong>${esc(c.name)}</strong><small>${esc(c.category)}</small>${people.length?people.map(a=>`<div class="item">${esc(a.name)}<br><small>${esc(a.shift)}</small></div>`).join(''):'<div class="item muted">Sin personas anotadas para este período</div>'}</div>`}).join('')||'<div class="muted">No hay coincidencias.</div>';}
+$('categories').addEventListener('click',e=>{const b=e.target.closest('[data-cat]');if(b){active=b.dataset.cat;renderRoster()}});$('companySearch').addEventListener('input',renderRoster);
+$('copy').addEventListener('click',async()=>{if(!period)return;const arr=rosters[period.id]||[];const txt='GUARDIAS DESPACHO · '+fmt(period.start)+' al '+fmt(addDays(period.end,1))+'\n\n'+companies.map(c=>{const p=arr.filter(a=>a.company===c.id);return p.length?c.name+':\n'+p.map(a=>'- '+a.shift+': '+a.name).join('\n'):''}).filter(Boolean).join('\n\n');try{await navigator.clipboard.writeText(txt);$('copy').textContent='Copiado ✓';setTimeout(()=>$('copy').textContent='Copiar listado',1800)}catch{alert('No se pudo copiar el listado desde este navegador.')}});
+async function fetchHolidays(){const y=Number(nowAR().ymd.slice(0,4));const years=[y,y+1];let all=[],ok=0;for(const year of years){try{const controller=new AbortController();const t=setTimeout(()=>controller.abort(),6500);const response=await fetch(`https://api.argentinadatos.com/v1/feriados/${year}`,{signal:controller.signal,cache:'no-store'});clearTimeout(t);if(!response.ok)throw Error('HTTP');const data=await response.json();if(!Array.isArray(data))throw Error('Formato');const relevant=data.filter(x=>{const type=String(x.tipo||x.type||'').toLocaleLowerCase('es');return !type.includes('no laborable')&&!type.includes('optativo')});for(const h of relevant){const date=String(h.fecha||h.date||'').slice(0,10);if(/^\d{4}-\d{2}-\d{2}$/.test(date))all.push({date,name:String(h.nombre||h.name||'Feriado')})}ok++}catch(e){}}
+if(ok){holidays=Object.fromEntries(all.map(x=>[x.date,x.name]));holidayState=ok===years.length?'ok':'partial';$('holidayStatus').textContent=`Calendario remoto consultado (${years.filter((_,i)=>i<ok).join(', ')}). Revisar feriados especiales y fechas trasladadas con la fuente oficial.`}else{holidayState='error';$('holidayStatus').textContent='⚠ No se pudo consultar el calendario de feriados. Los períodos calculados solo incluyen sábados y domingos; no uses este cálculo como calendario definitivo.'}updatePeriod();renderSuggestions()}
+renderPending();updatePeriod();renderSuggestions();fetchHolidays();setInterval(updatePeriod,60*1000);
+</script></body></html>
