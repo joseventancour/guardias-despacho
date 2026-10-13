@@ -36,7 +36,7 @@ const raw = [
 ['ENTES NACIONALES','ENARSA','Sábado|Pablo Signore','Domingo|Lucila Locampo'],
 ['ENTES NACIONALES','MEGSA','Todos los días|4316-7170'],
 ['DISTCOS','CAMUZZI','Sábado · Cierre & Repro|Axel Acuña Saez','Sábado · Progra|Miguel Kurylowicz','Domingo · Cierre & Repro|Axel Acuña Saez','Domingo · Progra|Gustavo Alegría'],
-['DISTCOS','ECOGAS CENTRO / CUYANA','Todos los días|Pablo Tofalo','Cel Centro|3516141320','Cel Cuyana|2616504690'],
+['DISTCOS','ECOGAS CENTRO / CUYANA','Todos los días|Rodolfo Valentini','Cel Centro|3516141320','Cel Cuyana|2616504690'],
 ['DISTCOS','GASNEA','Todos los días|+54 9 11 4565-7492'],
 ['DISTCOS','NATURGY BAN','Todos los días|Astrid Castañeda'],
 ['DISTCOS','NATURGY NOA','Todos los días|Diego Villalba'],
@@ -87,6 +87,13 @@ const raw = [
 
 ];
 const companies=raw.map((r,i)=>({id:String(i),category:r[0],name:r[1]}));
+// Contactos informativos permanentes: no se borran entre períodos.
+const permanentContacts={'17':[{label:'Teléfono',number:'4316-7170'}],'19':[{label:'Cel Centro',number:'3516141320'},{label:'Cel Cuyana',number:'2616504690'}],'20':[{label:'Teléfono de guardia',number:'+54 9 11 4565-7492'}]};
+// ECOGAS: los dos teléfonos son permanentes, pero la persona de guardia se inscribe por período.
+const linkedSource={'2':'57'}; // El grupo EQUINOR/OILSTONE/PSM/SHELL consulta la guardia de SAESA.
+function visibleAssignments(companyId){const source=linkedSource[companyId]||companyId;return guardias.filter(g=>g.company===source)}
+function contactSearch(companyId){return (permanentContacts[companyId]||[]).map(c=>c.label+' '+c.number).join(' ')}
+
 const seedPeople=[];raw.forEach((r,i)=>r.slice(2).forEach(s=>{const z=s.split('|'),person=z.slice(1).join('|').trim();if(!/\d{5}/.test(person))person.split(/\s+&\s+/).forEach(name=>{if(!seedPeople.some(p=>p.name===name.trim()&&p.company===String(i)))seedPeople.push({id:'seed'+seedPeople.length,name:name.trim(),company:String(i)})})}));
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let addedPeople=[],guardias=[],allGuardias=[],holidays={},holidayState='pending',chosen=null,active='TODAS',period=null,connected=false,db,auth,offGuards=null;
@@ -100,7 +107,7 @@ function compareNow(s){const n=nowAR();return (n.ymd+' '+String(n.hour).padStart
 function periods(){const today=nowAR().ymd,days=[];for(let n=-16;n<120;n++){const d=addDays(today,n);if(covered(d))days.push(d)}const groups=[];for(const d of days){const last=groups.at(-1);if(last&&addDays(last.end,1)===d)last.end=d;else groups.push({start:d,end:d})}return groups.map(g=>({...g,id:g.start+'_'+addDays(g.end,1),open:addDays(g.start,-1)+' 08:00',close:addDays(g.end,1)+' 08:00'}))}
 function periodDays(){const days=[];if(period)for(let d=period.start;d<=period.end;d=addDays(d,1))days.push(d);return days}
 function dayLabel(d){return new Date(d+'T12:00:00Z').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'short',timeZone:'UTC'})}
-function allPeople(){return [...seedPeople,...addedPeople]}
+function allPeople(){return [...seedPeople,...addedPeople].filter(p=>p.company!=='2').concat(seedPeople.filter(p=>p.company==='2').filter(p=>!seedPeople.some(s=>s.company==='57'&&s.name===p.name)).map(p=>({...p,company:'57'})))}
 function special(){return chosen&&/^(TGS|TGN)(\b|\s|-)/i.test(companies[+chosen.company]?.name||'')}
 function renderDays(){const prev=new Set([...$('dayOptions').querySelectorAll('input:checked')].map(x=>x.value));$('dayOptions').innerHTML=periodDays().map(d=>`<label class="day-option"><input type="checkbox" value="${d}" ${prev.has(d)?'checked':''}><span>${esc(dayLabel(d))}${holidays[d]?' · 🎉 Feriado':''}</span></label>`).join('');renderTasks()}
 function renderTasks(){const keep={};$('taskOptions').querySelectorAll('input:checked').forEach(x=>(keep[x.dataset.day]??=[]).push(x.value));const days=[...$('dayOptions').querySelectorAll('input:checked')].map(x=>x.value);$('taskOptions').innerHTML=special()?days.map(d=>`<div class="task-day"><strong>${esc(dayLabel(d))} · ¿Qué tareas?</strong>${['Cierre','Reprogramación','Programación','Balance'].map(t=>`<label class="task-label"><input data-day="${d}" value="${t}" type="checkbox" ${keep[d]?.includes(t)?'checked':''}>${t}</label>`).join('')}</div>`).join(''):'';updateButton()}
@@ -120,12 +127,14 @@ function renderRoster(){
   const q=$('companySearch').value.toLocaleLowerCase('es');
   $('categories').innerHTML=cats.map(c=>`<button class="secondary ${active===c?'active':''}" data-cat="${c}">${c==='TODAS'?'Todas':c}</button>`).join('');
   $('guardCount').textContent=guardias.length+' asignaciones para este período';
-  const filtered=companies.filter(c=>(active==='TODAS'||c.category===active)&&(!q||(c.name+' '+guardias.filter(a=>a.company===c.id).map(a=>a.name).join(' ')).toLocaleLowerCase('es').includes(q)));
+  const filtered=companies.filter(c=>(active==='TODAS'||c.category===active)&&(!q||(c.name+' '+visibleAssignments(c.id).map(a=>a.name).join(' ')+' '+contactSearch(c.id)).toLocaleLowerCase('es').includes(q)));
   $('roster').innerHTML=filtered.map(c=>{
-    const assignments=guardias.filter(a=>a.company===c.id).sort((a,b)=>a.day.localeCompare(b.day)||a.name.localeCompare(b.name));
+    const assignments=visibleAssignments(c.id).sort((a,b)=>a.day.localeCompare(b.day)||a.name.localeCompare(b.name));
     const dates=[...new Set(assignments.map(a=>a.day))].sort();
-    const grouped=dates.map(day=>`<div class="day-heading">${esc(dayLabel(day))}</div>${assignments.filter(a=>a.day===day).map(a=>`<div class="day-person">${esc(a.name)}${a.task!=='General'?` <span class="tag">${esc(a.task)}</span>`:''}${`<div class="own-actions"><button type="button" class="danger" data-remove-guard="${esc(a.id)}" title="Quitar esta asignación">Quitar esta guardia</button></div>`}</div>`).join('')}`).join('');
-    return `<div class="company"><strong>${esc(c.name)}</strong><small>${esc(c.category)}</small>${grouped||'<div class="item muted">Sin inscriptos</div>'}</div>`;
+    const grouped=dates.map(day=>`<div class="day-heading">${esc(dayLabel(day))}</div>${assignments.filter(a=>a.day===day).map(a=>`<div class="day-person">${esc(a.name)}${a.task!=='General'?` <span class="tag">${esc(a.task)}</span>`:''}${c.id==='2'?'':`<div class="own-actions"><button type="button" class="danger" data-remove-guard="${esc(a.id)}" title="Quitar esta asignación">Quitar esta guardia</button></div>`}</div>`).join('')}`).join('');
+    const contacts=(permanentContacts[c.id]||[]).map(t=>`<div class="item">☎ ${esc(t.label)}: <strong style="display:inline">${esc(t.number)}</strong></div>`).join('');
+    const linked=c.id==='2'?'<div class="muted" style="margin-top:7px">Guardia gestionada por SAESA · se actualiza automáticamente</div>':'';
+    return `<div class="company"><strong>${esc(c.name)}</strong><small>${esc(c.category)}</small>${linked}${contacts}${grouped||(c.id==='19'?'<div class="item muted">Guardia del período: sin responsable anotado todavía</div>':'<div class="item muted">Sin inscriptos para este período</div>')}</div>`;
   }).join('')||'<div class="muted">No se encontraron empresas.</div>';
 }
 $('roster').addEventListener('click',async e=>{
@@ -138,7 +147,7 @@ $('roster').addEventListener('click',async e=>{
 });
 $('findName').addEventListener('input',()=>{chosen=null;renderSuggestions();renderTasks()});$('suggestions').addEventListener('click',e=>{const b=e.target.closest('[data-person]');if(!b)return;chosen=allPeople().find(p=>p.id===b.dataset.person);$('findName').value=chosen?.name||'';$('suggestions').innerHTML='';renderSuggestions();renderTasks()});$('dayOptions').addEventListener('change',renderTasks);
 $('newCompany').innerHTML='<option value="">Seleccionar empresa…</option>'+companies.map(c=>`<option value="${c.id}">${esc(c.name)} · ${esc(c.category)}</option>`).join('');
-$('registerForm').addEventListener('submit',async e=>{e.preventDefault();if(!connected)return;const name=$('newName').value.trim().replace(/\s+/g,' '),company=$('newCompany').value;const feedback=$('registerStatus');if(name.length<3||name.length>80||!companies.some(c=>c.id===company))return;if(allPeople().some(p=>p.company===company&&p.name.toLocaleLowerCase('es')===name.toLocaleLowerCase('es'))){feedback.textContent='Esa persona ya está registrada en la empresa.';return}const btn=$('registerButton');btn.disabled=true;try{const key=push(ref(db,'personas')).key;await set(ref(db,'personas/'+key),{name,company,createdAt:serverTimestamp(),createdBy:auth.currentUser.uid});feedback.textContent='✅ ¡Listo! Ya podés buscar tu nombre y anotarte.';$('registerForm').reset();$('findName').value=name;chosen=null;renderSuggestions()}catch(err){feedback.textContent='No se pudo registrar: '+err.code+'. Revisá que estén publicadas las reglas nuevas de Realtime Database.'}finally{btn.disabled=!connected}});
+$('registerForm').addEventListener('submit',async e=>{e.preventDefault();if(!connected)return;const name=$('newName').value.trim().replace(/\s+/g,' '),company=linkedSource[$('newCompany').value]||$('newCompany').value;const feedback=$('registerStatus');if(name.length<3||name.length>80||!companies.some(c=>c.id===company))return;if(allPeople().some(p=>p.company===company&&p.name.toLocaleLowerCase('es')===name.toLocaleLowerCase('es'))){feedback.textContent='Esa persona ya está registrada en la empresa.';return}const btn=$('registerButton');btn.disabled=true;try{const key=push(ref(db,'personas')).key;await set(ref(db,'personas/'+key),{name,company,createdAt:serverTimestamp(),createdBy:auth.currentUser.uid});feedback.textContent='✅ ¡Listo! Ya podés buscar tu nombre y anotarte.';$('registerForm').reset();$('findName').value=name;chosen=null;renderSuggestions()}catch(err){feedback.textContent='No se pudo registrar: '+err.code+'. Revisá que estén publicadas las reglas nuevas de Realtime Database.'}finally{btn.disabled=!connected}});
 $('enroll').addEventListener('click',async()=>{
   if(!connected||!chosen||!period)return;
   const days=[...$('dayOptions').querySelectorAll('input:checked')].map(x=>x.value).filter(d=>periodDays().includes(d));
@@ -177,7 +186,7 @@ $('enroll').addEventListener('click',async()=>{
   button.disabled=false;
 });
 $('categories').addEventListener('click',e=>{const b=e.target.closest('[data-cat]');if(b){active=b.dataset.cat;renderRoster()}});$('companySearch').addEventListener('input',renderRoster);
-$('copy').addEventListener('click',async()=>{if(!period)return;const text='GUARDIAS DESPACHO · '+fmt(period.start)+' al '+fmt(addDays(period.end,1))+'\n\n'+companies.map(c=>{const items=guardias.filter(a=>a.company===c.id);return items.length?c.name+':\n'+[...new Set(items.map(a=>a.day))].sort().map(d=>dayLabel(d)+'\n'+items.filter(a=>a.day===d).map(a=>'- '+a.name+(a.task==='General'?'':' · '+a.task)).join('\n')).join('\n'):''}).filter(Boolean).join('\n\n');try{await navigator.clipboard.writeText(text);$('copy').textContent='¡Copiado!';setTimeout(()=>$('copy').textContent='Copiar para WhatsApp',1800)}catch{alert('No se pudo copiar.')}});
+$('copy').addEventListener('click',async()=>{if(!period)return;const text='GUARDIAS DESPACHO · '+fmt(period.start)+' al '+fmt(addDays(period.end,1))+'\n\n'+companies.map(c=>{const items=visibleAssignments(c.id);const contacts=permanentContacts[c.id]||[];if(!items.length&&!contacts.length)return '';return c.name+':\n'+(c.id==='2'?'(Guardia gestionada por SAESA)\n':'')+contacts.map(t=>t.label+': '+t.number).join('\n')+(contacts.length&&items.length?'\n':'')+[...new Set(items.map(a=>a.day))].sort().map(d=>dayLabel(d)+'\n'+items.filter(a=>a.day===d).map(a=>'- '+a.name+(a.task==='General'?'':' · '+a.task)).join('\n')).join('\n')}).filter(Boolean).join('\n\n');try{await navigator.clipboard.writeText(text);$('copy').textContent='¡Copiado!';setTimeout(()=>$('copy').textContent='Copiar para WhatsApp',1800)}catch{alert('No se pudo copiar.')}});
 async function fetchHolidays(){let entries=[],ok=[];const year=+nowAR().ymd.slice(0,4);for(const y of [year,year+1])try{const r=await fetch('https://api.argentinadatos.com/v1/feriados/'+y,{cache:'no-store'});if(!r.ok)throw Error('HTTP');const data=await r.json();if(!Array.isArray(data))throw Error('formato');for(const h of data){const type=String(h.tipo||'').toLowerCase();if(type.includes('no laborable')||type.includes('optativo'))continue;const d=String(h.fecha||'').slice(0,10);if(/^\d{4}-\d{2}-\d{2}$/.test(d))entries.push([d,h.nombre||'Feriado'])}ok.push(y)}catch(e){console.warn('Feriados '+y,e)}holidays=Object.fromEntries(entries);holidayState=ok.length?'ok':'error';$('holidayStatus').textContent=ok.length?'Feriados consultados para '+ok.join(' y ')+'. Verificá los cambios excepcionales en el calendario oficial.':'⚠ No se pudo consultar el calendario de feriados: revisar antes de inscribirse.';updatePeriod()}
 try{const app=initializeApp(firebaseConfig);db=getDatabase(app);auth=getAuth(app);onAuthStateChanged(auth,user=>{if(!user){connected=false;$('syncStatus').textContent='Conectando…';updateButton();return}connected=true;$('syncStatus').textContent='● Sincronizado';$('registerButton').disabled=false;onValue(ref(db,'personas'),snap=>{addedPeople=Object.entries(snap.val()||{}).map(([id,p])=>({id,...p}));renderSuggestions()},e=>{$('syncStatus').textContent='Sin permiso de lectura: '+e.code});listenGuardias();updateButton()});signInAnonymously(auth).catch(e=>{$('syncStatus').textContent='Error Firebase: '+e.code})}catch(e){$('syncStatus').textContent='Error conexión: '+e.message}
 updatePeriod();renderSuggestions();fetchHolidays();setInterval(updatePeriod,60000);
