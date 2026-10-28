@@ -108,9 +108,9 @@ function dayLabel(d){return new Date(d+'T12:00:00Z').toLocaleDateString('es-AR',
 function allPeople(){return [...seedPeople,...addedPeople].filter(p=>p.company!=='2').concat(seedPeople.filter(p=>p.company==='2').filter(p=>!seedPeople.some(s=>s.company==='57'&&s.name===p.name)).map(p=>({...p,company:'57'})))}
 function phoneForAssignment(a){const person=addedPeople.find(p=>p.id===a.personId);return typeof person?.phone==='string'?person.phone:''}
 function phoneText(a){const phone=phoneForAssignment(a);return phone?' · Tel.: '+phone:''}
-function special(){return chosen&&/^(TGS|TGN)(\b|\s|-)/i.test(companies[+chosen.company]?.name||'')}
+function special(){return chosen&&(String(chosen.company)==='11'||/^(TGS|TGN)(\b|\s|-)/i.test(companies[+chosen.company]?.name||''))}
 function renderDays(){const prev=new Set([...$('dayOptions').querySelectorAll('input:checked')].map(x=>x.value));$('dayOptions').innerHTML=periodDays().map(d=>`<label class="day-option"><input type="checkbox" value="${d}" ${prev.has(d)?'checked':''}><span>${esc(dayLabel(d))}${holidays[d]?' · 🎉 Feriado':''}</span></label>`).join('');renderTasks()}
-function renderTasks(){const keep={};$('taskOptions').querySelectorAll('input:checked').forEach(x=>(keep[x.dataset.day]??=[]).push(x.value));const days=[...$('dayOptions').querySelectorAll('input:checked')].map(x=>x.value);$('taskOptions').innerHTML=special()?days.map(d=>`<div class="task-day"><strong>${esc(dayLabel(d))} · ¿Qué tareas?</strong>${['Cierre','Reprogramación','Programación','Balance'].map(t=>`<label class="task-label"><input data-day="${d}" value="${t}" type="checkbox" ${keep[d]?.includes(t)?'checked':''}>${t}</label>`).join('')}</div>`).join(''):'';updateButton()}
+function renderTasks(){const keep={};$('taskOptions').querySelectorAll('input:checked').forEach(x=>(keep[x.dataset.day]??=[]).push(x.value));const days=[...$('dayOptions').querySelectorAll('input:checked')].map(x=>x.value);$('taskOptions').innerHTML=special()?days.map(d=>`<div class="task-day"><strong>${esc(dayLabel(d))} · ¿Qué tareas?</strong>${(String(chosen.company)==='11'?['Cierre','Reprogramación','Programación']:['Cierre','Reprogramación','Programación','Balance']).map(t=>`<label class="task-label"><input data-day="${d}" value="${t}" type="checkbox" ${keep[d]?.includes(t)?'checked':''}>${t}</label>`).join('')}</div>`).join(''):'';updateButton()}
 function enrollmentOpen(){return Boolean(period)&&compareNow(period.open)>=0&&compareNow(period.close)<0}
 function updateButton(){$('enroll').disabled=!connected||!chosen||!enrollmentOpen()}
 function renderSuggestions(){const q=$('findName').value.trim().toLocaleLowerCase('es');const hits=q.length>=2?allPeople().filter(p=>p.name.toLocaleLowerCase('es').includes(q)).slice(0,16):[];$('suggestions').innerHTML=hits.map(p=>`<button class="person-choice" data-person="${esc(p.id)}">${esc(p.name)} · ${esc(companies[+p.company]?.name||'')}</button>`).join('');$('selected').classList.toggle('hidden',!chosen);if(chosen)$('selected').textContent=chosen.name+' · '+companies[+chosen.company].name;updateButton()}
@@ -138,9 +138,9 @@ function refreshOpeningClock(){
   $('openingDetail').textContent='Horario de Argentina 🇦🇷 · Se actualiza automáticamente';
 }
 function updatePeriod(){const oldId=period?.id;const all=periods();period=all.find(p=>compareNow(p.open)>=0&&compareNow(p.close)<0)||all.find(p=>compareNow(p.open)<0)||all.at(-1);if(!period)return;$('periodTitle').textContent='Cobertura: '+fmt(period.start)+' al '+fmt(period.end);$('periodDesc').textContent='Inscripción prevista: '+fmt(period.open.slice(0,10))+' '+period.open.slice(11)+' → '+fmt(period.close.slice(0,10))+' '+period.close.slice(11);$('windowStatus').textContent=holidayState==='pending'?'Verificando feriados':holidayState==='error'?'Feriados sin verificar':enrollmentOpen()?'Inscripción abierta':'Inscripción cerrada';if(oldId!==period.id){renderDays();listenGuardias()}updateButton();renderRoster();refreshOpeningClock()}
-// Cada empresa posee una casilla por día; TGS/TGN una por día y tarea.
+// Cada empresa posee una casilla por día; TOTAL, TGS y TGN una por día y tarea.
 function groupCompany(company){return ['63','64'].includes(String(company))?'63':['65','66'].includes(String(company))?'65':String(company)}
-function slot(g){return groupCompany(g.company)+'|'+g.day+'|'+( ['63','65'].includes(groupCompany(g.company)) ? g.task : 'General')}
+function slot(g){return groupCompany(g.company)+'|'+g.day+'|'+( ['11','63','65'].includes(groupCompany(g.company)) ? g.task : 'General')}
 function keyFor(g){const slug={'General':'G','Cierre':'C','Reprogramación':'R','Programación':'P','Balance':'B'}[g.task]||'G';return 'slot_'+groupCompany(g.company)+'_'+g.day.replace(/-/g,'')+'_'+slug}
 function currentGuardias(rows){const result=new Map();for(const g of rows){const k=slot(g),prev=result.get(k);if(!prev||Number(g.createdAt||0)>Number(prev.createdAt||0)||(Number(g.createdAt||0)===Number(prev.createdAt||0)&&g.id===keyFor(g)))result.set(k,g)}return [...result.values()]}
 function sameSlot(a,b){return slot(a)===slot(b)}
@@ -153,7 +153,7 @@ function inspectAssignment(payload, path){
     company:typeof payload.company==='string'&&/^(?:[0-9]|[1-5][0-9]|6[0-6])$/.test(payload.company),
     day:typeof payload.day==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(payload.day),
     task:['General','Cierre','Reprogramación','Programación','Balance'].includes(payload.task),
-    taskCompany: ['63','64','65','66'].includes(payload.company)?payload.task!=='General':payload.task==='General',
+    taskCompany: payload.company==='11'?['Cierre','Reprogramación','Programación'].includes(payload.task):(['63','64','65','66'].includes(payload.company)?payload.task!=='General':payload.task==='General'),
     session:!!auth.currentUser?.uid
   };
   const debug={path,companyId:payload.company,day:payload.day,task:payload.task,personId:payload.personId,validations:valid};
