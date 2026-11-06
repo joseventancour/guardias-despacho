@@ -139,8 +139,8 @@ function refreshOpeningClock(){
 }
 function updatePeriod(){const oldId=period?.id;const all=periods();period=all.find(p=>compareNow(p.open)>=0&&compareNow(p.close)<0)||all.find(p=>compareNow(p.open)<0)||all.at(-1);if(!period)return;$('periodTitle').textContent='Cobertura: '+fmt(period.start)+' al '+fmt(period.end);$('periodDesc').textContent='Inscripción prevista: '+fmt(period.open.slice(0,10))+' '+period.open.slice(11)+' → '+fmt(period.close.slice(0,10))+' '+period.close.slice(11);$('windowStatus').textContent=holidayState==='pending'?'Verificando feriados':holidayState==='error'?'Feriados sin verificar':enrollmentOpen()?'Inscripción abierta':'Inscripción cerrada';if(oldId!==period.id){renderDays();listenGuardias()}updateButton();renderRoster();refreshOpeningClock()}
 // Cada empresa posee una casilla por día; TOTAL, TGS y TGN una por día y tarea.
-function groupCompany(company){return ['63','64'].includes(String(company))?'63':['65','66'].includes(String(company))?'65':String(company)}
-function slot(g){return groupCompany(g.company)+'|'+g.day+'|'+( ['11','63','65'].includes(groupCompany(g.company)) ? g.task : 'General')}
+function groupCompany(company){return String(company)}
+function slot(g){return groupCompany(g.company)+'|'+g.day+'|'+(['11','63','64'].includes(groupCompany(g.company))?g.task:'General')}
 function keyFor(g){const slug={'General':'G','Cierre':'C','Reprogramación':'R','Programación':'P','Balance':'B'}[g.task]||'G';return 'slot_'+groupCompany(g.company)+'_'+g.day.replace(/-/g,'')+'_'+slug}
 function currentGuardias(rows){const result=new Map();for(const g of rows){const k=slot(g),prev=result.get(k);if(!prev||Number(g.createdAt||0)>Number(prev.createdAt||0)||(Number(g.createdAt||0)===Number(prev.createdAt||0)&&g.id===keyFor(g)))result.set(k,g)}return [...result.values()]}
 function sameSlot(a,b){return slot(a)===slot(b)}
